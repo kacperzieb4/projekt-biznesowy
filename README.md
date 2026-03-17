@@ -6,7 +6,7 @@
 
 System wykorzystuje wzorzec Kompozyt, aby umożliwić zarządzanie pojedynczymi atrakcjami i grupami atrakcji w spójny sposób.
 
-###1 .1 Klasa bazowa: Attraction
+### 1 .1 Klasa bazowa: Attraction
 
 Opis: Abstrakcyjna klasa reprezentująca pojedynczą atrakcję lub grupę atrakcji.
 
