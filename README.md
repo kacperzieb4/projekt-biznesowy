@@ -1,4 +1,6 @@
-# Projekt biznesowy
+# Projekt biznesowy - Wachowicz, Zawartka, Łyko, Zięba
+
+![Diagram1](diagram1.png)
 
 ## 1. Podstawowy archetyp i kompozyt
 
