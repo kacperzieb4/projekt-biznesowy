@@ -54,7 +54,6 @@ Każdy element posiada silnie typowany Value Object (np. `AttractionId`) owijaj�
 
 Relacje są oddzielnymi encjami w domenie — nie są hardkodowane w klasach atrakcji.
 
-- **Źle (poziom atrakcji):** klasa `Museum` ma w kodzie `requires(Ferry)`. To hardkodowanie.
 - **Dobrze (poziom modelu):** relacje są osobnymi encjami.
 
 ```csharp
