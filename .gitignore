@@ -1,0 +1,71 @@
+## Rider / JetBrains
+.idea/
+*.sln.iml
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+
+## .NET
+*.rsuser
+*.cache
+*.pdb
+*.mdb
+
+## NuGet
+*.nupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+## Logs
+*.log
+
+## Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+## Publish output
+publish/
+*.publishsettings
+
+## Visual Studio / Rider generated
+.vs/
+
+## OS files
+.DS_Store
+Thumbs.db
+
+## Local environment / secrets
+.env
+.env.*
+appsettings.Development.json
+secrets.json
+
+## Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+## ReSharper / Rider caches
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+## Database / local files
+*.db
+*.sqlite
+*.sqlite3
