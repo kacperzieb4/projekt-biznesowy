@@ -1,4 +1,5 @@
 using Application.Interfaces;
+using Domain.Core.Attractions;
 using Domain.Core.Attractions.Aggregates;
 using Domain.Core.Attractions.Entities;
 using Domain.Core.Attractions.Enums;

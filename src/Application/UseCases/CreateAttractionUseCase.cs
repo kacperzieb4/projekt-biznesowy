@@ -1,5 +1,6 @@
 using Application.DTOs;
 using Application.Interfaces;
+using Domain.Core.Attractions;
 using Domain.Core.Attractions.Entities;
 using Domain.Core.Attractions.ValueObjects;
 

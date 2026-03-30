@@ -1,0 +1,37 @@
+
+.NET 8.0 — Zapraszamy!
+---------------------
+Wersja zestawu SDK: 8.0.125
+
+----------------
+Zainstalowany certyfikat deweloperski ASP.NET Core HTTPS.
+Aby zaufać certyfikatowi, wyświetl instrukcje: https://aka.ms/dotnet-https-linux
+
+----------------
+Napisz swoją pierwszą aplikację: https://aka.ms/dotnet-hello-world
+Dowiedz się, co nowego: https://aka.ms/dotnet-whats-new
+Zapoznaj się z dokumentacją: https://aka.ms/dotnet-docs
+Zgłoś problemy i znajdź źródło w witrynie GitHub: https://github.com/dotnet/core
+Użyj polecenia „dotnet --help”, aby wyświetlić dostępne polecenia, lub odwiedź stronę: https://aka.ms/dotnet-cli
+--------------------------------------------------------------------------------------
+Wersja programu MSBuild 17.8.49+7806cbf7b dla .NET
+  Determining projects to restore...
+  Projekt „/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Application/Application.csproj” jest pomijany, ponieważ nie został odnaleziony.
+  Projekt „/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Infrastructure/Infrastructure.csproj” jest pomijany, ponieważ nie został odnaleziony.
+  Projekt „/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Application/Application.csproj” jest pomijany, ponieważ nie został odnaleziony.
+  Projekt „/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Infrastructure/Infrastructure.csproj” jest pomijany, ponieważ nie został odnaleziony.
+/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error : Unable to load the service index for source https://api.nuget.org/v3/index.json. [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error :   Resource temporarily unavailable (api.nuget.org:443) [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error :   Resource temporarily unavailable [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+
+Kompilacja NIE POWIODŁA SIĘ.
+
+/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj : error NU1301: Unable to load the service index for source https://api.nuget.org/v3/index.json.
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error : Unable to load the service index for source https://api.nuget.org/v3/index.json. [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error :   Resource temporarily unavailable (api.nuget.org:443) [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+/usr/lib64/dotnet/sdk/8.0.125/NuGet.targets(156,5): error :   Resource temporarily unavailable [/home/lenovo/Programowanie/Github/m-lyko/proj-biz/projekt-biznesowy/src/Api/Api.csproj]
+    Ostrzeżenia: 0
+    Liczba błędów: 2
+
+Czas, który upłynął: 00:00:11.88
