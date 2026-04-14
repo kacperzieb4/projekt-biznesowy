@@ -1,44 +1,49 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Enums;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Services;
 
-namespace AttractionCatalog.Domain.Modules.CatalogSearch.Entities
+namespace AttractionCatalog.Domain.Modules.CatalogSearch.Entities;
+
+/// <summary>
+/// Defines when an attraction/scenario/group is available, using a set of priority-based rules.
+/// The rule with the highest combined priority (BasePriority + Rule.Priority) wins.
+/// </summary>
+public class AvailabilitySchedule
 {
-    public class AvailabilitySchedule
+    public int BasePriority { get; }
+    private readonly List<RuleId> _activeRuleIds;
+
+    public IReadOnlyCollection<RuleId> ActiveRuleIds => _activeRuleIds;
+
+    public AvailabilitySchedule(int basePriority, IEnumerable<RuleId> rules)
     {
-        public int BasePriority { get; }
-        private readonly List<RuleId> _activeRuleIds;
+        BasePriority = basePriority;
+        _activeRuleIds = rules.ToList();
+    }
 
-        public AvailabilitySchedule(int basePriority, IEnumerable<RuleId> rules)
+    /// <summary>
+    /// Evaluates whether this schedule allows availability at the given time.
+    /// Rules are sorted by combined priority (descending); the first matching rule wins.
+    /// If no rule matches, defaults to available.
+    /// </summary>
+    public bool IsAvailable(DateTime time, IEnumerable<RuleDefinition> allRules, RuleSpecificationCompiler compiler)
+    {
+        var applicableRules = allRules
+            .Where(r => _activeRuleIds.Contains(r.Id))
+            .Select(r => new { Rule = r, Priority = BasePriority + r.Priority })
+            .OrderByDescending(r => r.Priority)
+            .ToList();
+
+        foreach (var r in applicableRules)
         {
-            BasePriority = basePriority;
-            _activeRuleIds = rules.ToList();
-        }
-
-        public bool IsAvailable(DateTime time, IEnumerable<RuleDefinition> allRules, RuleSpecificationCompiler compiler)
-        {
-            // The rule with the highest combined priority wins
-            var applicableRules = allRules
-                .Where(r => _activeRuleIds.Contains(r.Id))
-                .Select(r => new { Rule = r, Priority = BasePriority + r.Priority })
-                .OrderByDescending(r => r.Priority)
-                .ToList();
-
-            foreach (var r in applicableRules)
+            var spec = compiler.CompileRule(r.Rule);
+            if (spec.IsSatisfiedBy(time))
             {
-                var spec = compiler.CompileRule(r.Rule);
-                if (spec.IsSatisfiedBy(time))
-                {
-                    // Once a high‑priority rule matches, its effect determines availability
-                    return r.Rule.Effect == Effect.Allow;
-                }
+                return r.Rule.Effect == Effect.Allow;
             }
-
-            // If no rule matches, default to available
-            return true;
         }
+
+        // No rule matched — default to available
+        return true;
     }
 }

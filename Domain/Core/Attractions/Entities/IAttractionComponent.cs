@@ -1,13 +1,16 @@
-using System.Collections.Generic;
+using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Entities;
 
-namespace AttractionCatalog.Domain.Core.Attractions.Entities
+namespace AttractionCatalog.Domain.Core.Attractions.Entities;
+
+/// <summary>
+/// Composite pattern interface — allows treating a single attraction
+/// and an attraction group uniformly for availability checks and catalog search.
+/// </summary>
+public interface IAttractionComponent
 {
-    public interface IAttractionComponent
-    {
-        ValueObjects.AttractionId Id { get; }
-        string Name { get; }
-        List<Tag> Tags { get; }
-        AvailabilitySchedule Schedule { get; }
-    }
+    AttractionId Id { get; }
+    string Name { get; }
+    List<Tag> Tags { get; }
+    AvailabilitySchedule Schedule { get; }
 }

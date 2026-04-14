@@ -1,17 +1,13 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using AttractionCatalog.Application;
 using AttractionCatalog.Infrastructure;
 using AttractionCatalog.API.Handlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Register core application services (dependency injection)
+// Clean Architecture: each layer registers its own services
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure();
 
-// Register the custom global exception handler
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
@@ -27,9 +23,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// Enable the exception handling middleware
 app.UseExceptionHandler();
-
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();

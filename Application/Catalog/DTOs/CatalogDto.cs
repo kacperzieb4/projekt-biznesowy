@@ -1,11 +1,8 @@
-using System;
+namespace AttractionCatalog.Application.Catalog.DTOs;
 
-namespace AttractionCatalog.Application.Catalog.DTOs
+public record CatalogDto
 {
-    public class CatalogDto
-    {
-        public Guid Id { get; set; }
-        public string Name { get; set; }
-        public bool IsAvailable { get; set; }
-    }
+    public required Guid Id { get; init; }
+    public required string Name { get; init; }
+    public required bool IsAvailable { get; init; }
 }

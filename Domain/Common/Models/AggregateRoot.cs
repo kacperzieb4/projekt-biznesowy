@@ -1,19 +1,23 @@
-using System;
-using System.Collections.Generic;
+namespace AttractionCatalog.Domain.Common.Models;
 
-namespace AttractionCatalog.Domain.Common.Models
+/// <summary>
+/// Base record for all domain events. Carries a timestamp of when it occurred.
+/// </summary>
+public abstract record DomainEvent
 {
-    public abstract record DomainEvent
-    {
-        public DateTime OccurredOn { get; } = DateTime.UtcNow;
-    }
+    public DateTime OccurredOn { get; } = DateTime.UtcNow;
+}
 
-    public abstract class AggregateRoot
-    {
-        private readonly List<DomainEvent> _events = new();
-        public IReadOnlyCollection<DomainEvent> Events => _events;
+/// <summary>
+/// Base class for aggregate roots. Collects domain events that are dispatched
+/// after a successful persistence operation.
+/// </summary>
+public abstract class AggregateRoot
+{
+    private readonly List<DomainEvent> _events = [];
 
-        protected void AddEvent(DomainEvent @event) => _events.Add(@event);
-        public void ClearEvents() => _events.Clear();
-    }
+    public IReadOnlyCollection<DomainEvent> Events => _events;
+
+    protected void AddEvent(DomainEvent @event) => _events.Add(@event);
+    public void ClearEvents() => _events.Clear();
 }

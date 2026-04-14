@@ -1,46 +1,55 @@
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using AttractionCatalog.Domain.Common.Models;
-using AttractionCatalog.Domain.Core.Attractions.Aggregates;
-using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
+using AttractionCatalog.Domain.Core.Attractions.Entities;
 using AttractionCatalog.Domain.Core.Attractions.Ports;
-using AttractionCatalog.Domain.Modules.CatalogSearch.ValueObjects;
+using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
 
-namespace AttractionCatalog.Infrastructure.Core.Attractions.Adapters
+namespace AttractionCatalog.Infrastructure.Core.Attractions.Adapters;
+
+/// <summary>
+/// In-memory implementation of <see cref="IAttractionRepository"/> for development and testing.
+/// In production, this would be replaced with an EF Core or Dapper-backed implementation.
+/// </summary>
+public sealed class InMemoryAttractionRepository : IAttractionRepository
 {
-    public class InMemoryAttractionRepository : IAttractionRepository
+    private readonly ConcurrentDictionary<AttractionId, IAttractionComponent> _store = new();
+
+    public Task SaveAsync(IAttractionComponent attraction, CancellationToken ct = default)
     {
-        private readonly ConcurrentDictionary<AttractionId, IAttractionComponent> _data = new();
+        _store[attraction.Id] = attraction;
 
-        public void Save(IAttractionComponent attraction)
+        if (attraction is AggregateRoot aggregate)
         {
-            _data[attraction.Id] = attraction;
-
-            // Dispatch domain events after a successful save 
-            if (attraction is AggregateRoot aggregate)
-            {
-                DispatchEvents(aggregate);
-            }
+            DispatchEvents(aggregate);
         }
 
-        public IAttractionComponent FindById(AttractionId id) => _data.TryGetValue(id, out var a) ? a : null!;
-        
-        public List<IAttractionComponent> FindByCriteria(IQuerySpecification<IAttractionComponent> spec)
+        return Task.CompletedTask;
+    }
+
+    public Task<IAttractionComponent?> FindByIdAsync(AttractionId id, CancellationToken ct = default)
+    {
+        _store.TryGetValue(id, out var attraction);
+        return Task.FromResult(attraction);
+    }
+
+    public Task<List<IAttractionComponent>> FindByCriteriaAsync(
+        IQuerySpecification<IAttractionComponent> spec,
+        CancellationToken ct = default)
+    {
+        var predicate = spec.ToExpression().Compile();
+        var results = _store.Values.Where(predicate).ToList();
+        return Task.FromResult(results);
+    }
+
+    private static void DispatchEvents(AggregateRoot aggregate)
+    {
+        foreach (var domainEvent in aggregate.Events)
         {
-            // TODO: apply specification filtering
-            return _data.Values.ToList();
+            // In production: publish to MediatR INotificationHandler or message bus
+            System.Diagnostics.Debug.WriteLine(
+                $"[DomainEvent] {domainEvent.GetType().Name} at {domainEvent.OccurredOn:O}");
         }
 
-        private void DispatchEvents(AggregateRoot aggregate)
-        {
-            foreach (var @event in aggregate.Events)
-            {
-                // In a production system, this would publish to a Message Bus (RabbitMQ/Kafka)
-                // or a MediatR INotificationHandler.
-                System.Diagnostics.Debug.WriteLine($"Domain Event Dispatched: {@event.GetType().Name} at {@event.OccurredOn}");
-            }
-            aggregate.ClearEvents();
-        }
+        aggregate.ClearEvents();
     }
 }

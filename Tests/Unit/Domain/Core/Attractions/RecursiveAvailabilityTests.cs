@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using AttractionCatalog.Domain.Core.Attractions.Aggregates;
+using AttractionCatalog.Domain.Core.Attractions.Entities;
 using AttractionCatalog.Domain.Core.Attractions.Enums;
 using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Entities;
@@ -8,38 +6,45 @@ using AttractionCatalog.Domain.Modules.CatalogSearch.Enums;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Services;
 using Xunit;
 
-namespace AttractionCatalog.Tests.Unit.Domain.Core.Attractions
+namespace AttractionCatalog.Tests.Unit.Domain.Core.Attractions;
+
+public class RecursiveAvailabilityTests
 {
-    public class RecursiveAvailabilityTests
+    [Fact]
+    public void Group_Should_Be_Unavailable_When_Any_Child_Is_Blocked()
     {
-        [Fact]
-        public void Group_Should_Be_Unavailable_If_OnlyOne_Child_Is_Unavailable()
+        // Arrange — a deep hierarchy with one blocked child (Composite Pattern)
+        var compiler = new RuleSpecificationCompiler();
+        var allowRuleId = new RuleId(Guid.NewGuid());
+        var denyRuleId = new RuleId(Guid.NewGuid());
+
+        var rules = new List<RuleDefinition>
         {
-            // GIVEN: A deep hierarchy of attractions (Composite Pattern)
-            var compiler = new RuleSpecificationCompiler();
-            var allowRule = new RuleId(Guid.NewGuid());
-            var denyRule = new RuleId(Guid.NewGuid());
-            var rulesRepo = new List<RuleDefinition> 
-            { 
-                new(allowRule, RuleType.Weekly, 10, Effect.Allow, new()), 
-                new(denyRule, RuleType.Exception, 100, Effect.Deny, new()) 
-            };
+            new(allowRuleId, RuleType.Weekly, 10, Effect.Allow, new()),
+            new(denyRuleId, RuleType.Exception, 100, Effect.Deny, new())
+        };
 
-            var availableSchedule = new AvailabilitySchedule(0, new List<RuleId> { allowRule });
-            var unavailableSchedule = new AvailabilitySchedule(0, new List<RuleId> { denyRule });
+        var availableSchedule = new AvailabilitySchedule(0, [allowRuleId]);
+        var blockedSchedule = new AvailabilitySchedule(0, [denyRuleId]);
 
-            var child1 = new SingleAttraction(new(Guid.NewGuid()), "Child 1", AttractionState.Catalog, new(), new(0, 0), availableSchedule, new());
-            var child2 = new SingleAttraction(new(Guid.NewGuid()), "Child 2", AttractionState.Catalog, new(), new(0, 0), unavailableSchedule, new());
-            
-            var group = new AttractionGroup(new(Guid.NewGuid()), "Root Group", SequenceMode.FLEXIBLE, new(), availableSchedule, new() { child1, child2 });
+        var child1 = new SingleAttraction(
+            new AttractionId(Guid.NewGuid()), "Child 1", AttractionState.Catalog,
+            [], new Location(0, 0), availableSchedule, []);
 
-            var searchService = new CatalogSearchService(compiler, rulesRepo);
+        var child2 = new SingleAttraction(
+            new AttractionId(Guid.NewGuid()), "Child 2", AttractionState.Catalog,
+            [], new Location(0, 0), blockedSchedule, []);
 
-            // WHEN: Checking availability for the entire group
-            bool result = searchService.CheckAvailability(group, DateTime.Now);
+        var group = new AttractionGroup(
+            new AttractionId(Guid.NewGuid()), "Root Group", SequenceMode.Flexible,
+            [], availableSchedule, [child1, child2]);
 
-            // THEN: The entire group is unavailable because Child 2 is blocked (Recursive Logic)
-            Assert.False(result);
-        }
+        var searchService = new CatalogSearchService(compiler, rules);
+
+        // Act
+        var result = searchService.CheckAvailability(group, DateTime.Now);
+
+        // Assert — the entire group is unavailable because Child 2 is blocked
+        Assert.False(result);
     }
 }

@@ -1,27 +1,39 @@
-using System;
-using System.Collections.Generic;
-using AttractionCatalog.Domain.Core.Attractions.Aggregates;
+using AttractionCatalog.Domain.Core.Attractions.Entities;
 using AttractionCatalog.Domain.Core.Attractions.Enums;
 using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
 using AttractionCatalog.Domain.Modules.CatalogSearch.Entities;
 using Xunit;
 
-namespace AttractionCatalog.Tests.Unit.Domain
+namespace AttractionCatalog.Tests.Unit.Domain;
+
+public class AttractionGroupTests
 {
-    public class AttractionGroupTests
+    [Fact]
+    public void Group_With_Multiple_Components_Should_Aggregate_Logic()
     {
-        [Fact]
-        public void Group_With_Multiple_Components_Should_Aggregate_Logic()
-        {
-            var schedule = new AvailabilitySchedule(0, new List<RuleId>());
-            var components = new List<IAttractionComponent>
-            {
-                new SingleAttraction(new AttractionId(Guid.NewGuid()), "Muzeum", AttractionState.Catalog, new(), new Location(0,0), schedule, new()),
-            };
+        // Arrange
+        var schedule = new AvailabilitySchedule(0, new List<RuleId>());
+        var child = new SingleAttraction(
+            new AttractionId(Guid.NewGuid()),
+            "Muzeum",
+            AttractionState.Catalog,
+            [],
+            new Location(0, 0),
+            schedule,
+            []);
 
-            var group = new AttractionGroup(new AttractionId(Guid.NewGuid()), "Pass", SequenceMode.FLEXIBLE, new(), schedule, components);
+        var components = new List<IAttractionComponent> { child };
 
-            Assert.Single(group.Components);
-        }
+        // Act
+        var group = new AttractionGroup(
+            new AttractionId(Guid.NewGuid()),
+            "Pass",
+            SequenceMode.Flexible,
+            [],
+            schedule,
+            components);
+
+        // Assert
+        Assert.Single(group.Components);
     }
 }

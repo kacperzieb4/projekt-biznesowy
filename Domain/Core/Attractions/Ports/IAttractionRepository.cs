@@ -1,14 +1,14 @@
-using System.Collections.Generic;
-using AttractionCatalog.Domain.Core.Attractions.Aggregates;
+using AttractionCatalog.Domain.Core.Attractions.Entities;
 using AttractionCatalog.Domain.Core.Attractions.ValueObjects;
-using AttractionCatalog.Domain.Modules.CatalogSearch.ValueObjects;
 
-namespace AttractionCatalog.Domain.Core.Attractions.Ports
+namespace AttractionCatalog.Domain.Core.Attractions.Ports;
+
+/// <summary>
+/// Repository port for attraction persistence. Infrastructure layer provides the implementation.
+/// </summary>
+public interface IAttractionRepository
 {
-    public interface IAttractionRepository
-    {
-        void Save(IAttractionComponent attraction);
-        IAttractionComponent FindById(AttractionId id);
-        List<IAttractionComponent> FindByCriteria(IQuerySpecification<IAttractionComponent> spec);
-    }
+    Task SaveAsync(IAttractionComponent attraction, CancellationToken ct = default);
+    Task<IAttractionComponent?> FindByIdAsync(AttractionId id, CancellationToken ct = default);
+    Task<List<IAttractionComponent>> FindByCriteriaAsync(IQuerySpecification<IAttractionComponent> spec, CancellationToken ct = default);
 }

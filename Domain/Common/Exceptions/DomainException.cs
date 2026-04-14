@@ -1,11 +1,11 @@
-using System;
+namespace AttractionCatalog.Domain.Common.Exceptions;
 
-namespace AttractionCatalog.Domain.Common.Exceptions
+/// <summary>
+/// Base exception for all domain-level rule violations.
+/// </summary>
+public class DomainException : Exception
 {
-    public class DomainException : Exception
-    {
-        public DomainException() : base() { }
-        public DomainException(string message) : base(message) { }
-        public DomainException(string message, Exception innerException) : base(message, innerException) { }
-    }
+    public DomainException() { }
+    public DomainException(string message) : base(message) { }
+    public DomainException(string message, Exception innerException) : base(message, innerException) { }
 }
