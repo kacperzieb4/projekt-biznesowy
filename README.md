@@ -21,10 +21,10 @@ System został zaprojektowany w oparciu o pryncypia **Domain-Driven Design (DDD)
 
 Logika biznesowa jest silnie odseparowana od warstwy technicznej:
 
-- **Domain Layer**: Rdzeń systemu. Zawiera Encje, Agregaty (`SingleAttraction`), Value Objecty oraz Specyfikacje. Moduł całkowicie niezależny od technologii i frameworków.
-- **Application Layer**: Obsługuje przypadki użycia (Use Cases, np. `PublishAttractionUseCase`) i odpowiada za orkiestrację obiektów domenowych.
-- **Infrastructure Layer**: Realizacja aspektów technicznych (np. `InMemoryAttractionRepository`, logowanie, integracja z bazą danych typu SQL).
-- **API Layer**: Kontrolery REST w warstwie prezentacji, wystawiające funkcjonalności na styku z interfejsami wierzchnimi/zewnętrznymi aplikacjami klienckimi.
+- **Domain Layer**: Rdzeń systemu podzielony na Bounded Contexty. Zawiera Encje (m.in. `SingleAttraction`, `AttractionGroup` poprawnie sklasyfikowane wewnątrz folderu `/Entities`), Value Objecty oraz Specyfikacje. Moduł całkowicie niezależny od technologii i frameworków, wykorzystujący natywne wyjątki języka zamiast starych rozwiązań typu klasy Guard.
+- **Application Layer**: Obsługuje przypadki użycia (Use Cases, np. `PublishAttractionUseCase`, a także zintegrowany na tym poziomie model `LocationQuerySpecification`) i odpowiada za orkiestrację obiektów domenowych.
+- **Infrastructure Layer**: Realizacja aspektów technicznych oparta o wzorzec Portów i Adapterów (Architektura Heksagonalna).
+- **API Layer**: Kontrolery REST w warstwie prezentacji, wystawiające funkcjonalności na styku z interfejsami wierzchnimi/zewnętrznymi aplikacjami klienckimi. Całość połączona za pomocą głównego pliku `AttractionCatalog.sln` ułatwiającego import i uruchamianie całego systemu bezpośrednio z IDE.
 
 ---
 
@@ -105,7 +105,7 @@ public class AttractionRelation {
 
 ### 6. Model Data-Driven Rules & Catalog Search (Modules/Availability)
 
-Aby wyeliminować hardkodowanie logiki biznesowej, reguły dostępności obiektów są przechowywane persystentnie jako ustrukturyzowane wiersze danych. Zapewnia to dynamikę modyfikacji parametrów usług bez przerw w działaniu systemu. Architektura implementuje mechanizm **Priority-Based Rule Overriding**.
+Aby wyeliminować hardkodowanie logiki biznesowej, reguły dostępności obiektów są przechowywane persystentnie jako ustrukturyzowane wiersze danych. Zapewnia to dynamikę modyfikacji parametrów usług bez przerw w działaniu systemu. Architektura wykorzystuje nowo zbudowany silnik reguł implementujący potężny mechanizm **Priority-Based Rule Overriding**. Pozwala on na zaawansowane relacje czasowe, potrafiąc np. automatycznie zablokować działanie całego Pakietu (Grupy), jeżeli z powodu awarii czy rezerwacji wypadnie z niego w danym przedziale bazowy element składowy (np. rejs statkiem).
 
 ```csharp
 public class RuleDefinition {
@@ -239,10 +239,18 @@ Obiekty transferowe. Zgodnie z pryncypiami Czystej Architektury są całkowicie 
 
 ---
 
-### Infrastructure Layer
+### Infrastructure Layer (Porty i Adaptery)
 
-**`InMemoryAttractionRepository.cs`**
-Implementuje `IAttractionRepository` — na potrzeby PoC używa `ConcurrentDictionary`.
+W tej warstwie wprowadzono wzorzec **Portów i Adapterów (Architektura Heksagonalna)**. Całkowicie porzucono stary system w zlikwidowanym katalogu `Persistence`. Obecnie używany jest wyizolowany adapter dostarczający dane w locie, rezydujący w `Infrastructure/Core/Attractions/Adapters/`. 
+Logika ładowania konfiguracji DI dla Infrastruktury została również zreorganizowana i zmapowana w nowym `DependencyInjection.cs`, stanowczo oddzielając wymagania domenowe i czyniąc repozytorium w pamięci prawdziwym, pełnoprawnym dostarczycielem wiedzy.
+
+---
+
+### Warstwa Testów (TDD & Unit Tests)
+
+Stworzono kompleksowy zasób pełnoprawnych testów jednostkowych weryfikujących najważniejsze zasady silnika i zagnieżdżeń:
+- **`RecursiveAvailabilityTests.cs`**: Autentyfikują skomplikowane kaskadowanie awarii i zagnieżdżonych wyjątków (np. awaria rejsu statkiem wewnątrz grupy turystycznej pociąga za sobą zamknięcie samego całego pakietu).
+- **`PriorityAvailabilityTests.cs` i `RuleResolutionTests.cs`**: Egzekwują politykę nadpisywania reguł dostępu, dając gwarancję poprawnego priorytetyzowania kalendarzy lokalnych nad narzuconymi z zewnątrz.
 
 
 ---
