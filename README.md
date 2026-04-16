@@ -253,7 +253,33 @@ Stworzono kompleksowy zasób pełnoprawnych testów jednostkowych weryfikującyc
 - **`PriorityAvailabilityTests.cs` i `RuleResolutionTests.cs`**: Egzekwują politykę nadpisywania reguł dostępu, dając gwarancję poprawnego priorytetyzowania kalendarzy lokalnych nad narzuconymi z zewnątrz.
 
 
----
+
+## API Endpoints
+
+> Pełna interaktywna dokumentacja dostępna pod `/swagger` po uruchomieniu aplikacji (`dotnet run --project API`).
+
+### Atrakcje
+
+| Metoda | Ścieżka | Opis |
+| :--- | :--- | :--- |
+| `POST` | `/api/attraction` | Tworzy nową atrakcję (stan: `Draft`) |
+| `GET` | `/api/attraction/{id}` | Pobiera atrakcję po ID |
+| `PUT` | `/api/attraction/{id}/publish` | Publikuje atrakcję (`Draft → Catalog`) |
+
+### Grupy
+
+| Metoda | Ścieżka | Opis |
+| :--- | :--- | :--- |
+| `POST` | `/api/group` | Tworzy grupę (pakiet) atrakcji |
+
+### Katalog
+
+| Metoda | Ścieżka | Opis |
+| :--- | :--- | :--- |
+| `GET` | `/api/catalog/search` | Wyszukuje dostępne atrakcje według kryteriów (`SearchCriteria`) |
+
+
+
 
 ## UML
 
