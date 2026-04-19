@@ -13,6 +13,7 @@ public static class DependencyInjection
         
         // Register seeder
         services.AddHostedService<AttractionSeeder>();
+        services.AddHostedService<WieliczkaSeeder>();
         
         return services;
     }
