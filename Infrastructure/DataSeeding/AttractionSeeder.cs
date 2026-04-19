@@ -301,6 +301,137 @@ public sealed class AttractionSeeder : IHostedService
         await _repository.SaveAsync(dzienWellness, cancellationToken);
         await _repository.SaveAsync(weekendRelaks, cancellationToken);
         await _repository.SaveAsync(weekendPremium, cancellationToken);
+
+        // =============================================================
+        // KOPIEC KOŚCIUSZKI (turystyczny seed obok hotel/basen/fitpark)
+        //
+        // Cel: pokazać priority-based rule overriding na realnej, wieloreżimowej atrakcji.
+        // Kopiec ma cztery scenariusze (sam kopiec, muzeum, kaplica, fort) i trzy reżimy godzin:
+        //   - letni (kwi–paź): 09:30–19:30 codziennie
+        //   - zimowy (lis–mar): 09:30–15:30, tylko weekendy
+        //   - muzeum: 10:00–18:00 cały rok
+        //
+        // Grupa AttractionGroup "Bilet łączony" spina to jako pakiet sprzedażowy.
+        // =============================================================
+
+        var ruleKopiecLato = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Seasonal,
+            priority: 20,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom",   9 },
+                { "TimeTo",    19 },
+                { "MonthFrom",  4 },
+                { "MonthTo",   10 },
+            });
+
+        // Zimą niższy priorytet - w lato rule letnia wygrywa (wyższy effective priority).
+        // Demonstracja: reguła sezonowa Exception mogłaby nadpisać to np. 1 listopada (Dzień Wszystkich Świętych).
+        var ruleKopiecZima = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Seasonal,
+            priority: 10,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom",   9 },
+                { "TimeTo",    15 },
+                { "MonthFrom", 11 },
+                { "MonthTo",    3 },
+            });
+
+        // Muzeum - stałe godziny cały rok, bez sezonowości.
+        var ruleMuzeum = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Weekly,
+            priority: 10,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom", 10 },
+                { "TimeTo",   18 },
+            });
+
+        // Wyjątek: 1 listopada zamknięte. Priority bardzo wysoki, Effect.Deny.
+        // Bazowy priority harmonogramu 100 + 99 = 199, pobije wszystko inne.
+        var ruleZamkniete1Listopada = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Exception,
+            priority: 99,
+            Effect.Deny,
+            new Dictionary<string, object>
+            {
+                { "Month", 11 },
+                { "Day",    1 },
+            });
+
+        _globalRules.AddRange(new[] { ruleKopiecLato, ruleKopiecZima, ruleMuzeum, ruleZamkniete1Listopada });
+
+        var scheduleKopiecOutdoor = new AvailabilitySchedule(100,
+            new List<RuleId> { ruleKopiecLato.Id, ruleKopiecZima.Id, ruleZamkniete1Listopada.Id });
+        var scheduleMuzeum = new AvailabilitySchedule(100,
+            new List<RuleId> { ruleMuzeum.Id, ruleZamkniete1Listopada.Id });
+
+        // Tagi turystyczne
+        var tagViewpoint = new Tag(new TagId(Guid.NewGuid()), "VIEWPOINT",  "Punkt widokowy",  "Tarasy i panoramy");
+        var tagMuseum    = new Tag(new TagId(Guid.NewGuid()), "MUSEUM",     "Muzeum",          "Ekspozycje muzealne");
+        var tagReligion  = new Tag(new TagId(Guid.NewGuid()), "RELIGION",   "Obiekt sakralny", "Kaplice, kościoły");
+        var tagFortress  = new Tag(new TagId(Guid.NewGuid()), "FORTRESS",   "Fort",            "Fortyfikacje historyczne");
+        var tagHistory   = new Tag(new TagId(Guid.NewGuid()), "HISTORY",    "Historia",        "Obiekty historyczne");
+
+        // Scenariusze Kopca
+        var scenNasyp = new Scenario(
+            new ScenarioId(Guid.NewGuid()), "Wejście na kopiec",
+            TimeSpan.FromMinutes(45), new List<Tag> { tagViewpoint, tagHistory },
+            scheduleKopiecOutdoor);
+
+        var scenMuzeum = new Scenario(
+            new ScenarioId(Guid.NewGuid()), "Muzeum Kościuszki",
+            TimeSpan.FromHours(1), new List<Tag> { tagMuseum, tagHistory },
+            scheduleMuzeum);
+
+        var scenKaplica = new Scenario(
+            new ScenarioId(Guid.NewGuid()), "Kaplica bł. Bronisławy",
+            TimeSpan.FromMinutes(20), new List<Tag> { tagReligion, tagHistory },
+            scheduleMuzeum);  // współdzieli godziny z muzeum - tak samo in­door
+
+        var scenFort = new Scenario(
+            new ScenarioId(Guid.NewGuid()), "Spacer po wałach fortu",
+            TimeSpan.FromMinutes(45), new List<Tag> { tagFortress, tagHistory },
+            scheduleKopiecOutdoor);  // outdoor - zamknięty zimą wieczorami
+
+        // Scenariusz combo - pełne zwiedzanie. Harmonogram najbardziej restrykcyjny (indoor+outdoor)
+        // więc używa outdoor, bo outdoor kończy się wcześniej i ma sezon. To demonstruje regułę
+        // z README kacperzieba: combo dziedziczy harmonogram bardziej restrykcyjnej strefy.
+        var scenPelne = new Scenario(
+            new ScenarioId(Guid.NewGuid()), "Pełne zwiedzanie kompleksu",
+            TimeSpan.FromHours(2.5), new List<Tag> { tagViewpoint, tagMuseum, tagReligion, tagFortress, tagHistory },
+            scheduleKopiecOutdoor);
+
+        var kopiecKosciuszki = new SingleAttraction(
+            new AttractionId(Guid.NewGuid()),
+            "Kopiec Kościuszki",
+            AttractionState.Catalog,
+            new List<Tag> { tagViewpoint, tagMuseum, tagReligion, tagFortress, tagHistory },
+            new Location(50.0551, 19.8935),
+            zawszeOtwarty,  // globalny wyłącznik całej atrakcji - nie ingeruje tu
+            new List<Scenario> { scenNasyp, scenMuzeum, scenKaplica, scenFort, scenPelne });
+
+        // Grupa "Bilet łączony Kopiec + Las Wolski" - pokazuje składanie produktów,
+        // ale tu solo (Las Wolski nie ma w seedzie). Pakiet ma SequenceMode.Flexible
+        // bo kolejność zwiedzania kompleksu jest dowolna.
+        var kopiecPakiet = new AttractionGroup(
+            new AttractionId(Guid.NewGuid()),
+            "Kopiec Kościuszki - Bilet kompleksowy",
+            SequenceMode.Flexible,
+            new List<Tag> { tagViewpoint, tagMuseum, tagReligion, tagFortress, tagHistory },
+            zawszeOtwarty,
+            new List<IAttractionComponent> { kopiecKosciuszki });
+
+        await _repository.SaveAsync(kopiecKosciuszki, cancellationToken);
+        await _repository.SaveAsync(kopiecPakiet, cancellationToken);
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
