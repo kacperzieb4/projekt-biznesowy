@@ -87,8 +87,52 @@ public sealed class AttractionSeeder : IHostedService
                 { "MonthTo",    8 },  // sierpień
             });
 
+        // Bazylika Mariacka — Zwiedzanie bazyliki: Pon–Sob 11:30–18:00
+        var ruleBazylikaWeekday = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Weekly,
+            priority: 10,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom", 11 },
+                { "TimeTo",   18 },
+                // DaysOfWeek 1–6 = poniedziałek–sobota (0 = niedziela)
+                { "DaysOfWeek", new[] { 1, 2, 3, 4, 5, 6 } }
+            });
+
+        // Bazylika Mariacka — Zwiedzanie bazyliki: Niedziela i święta 14:00–18:00
+        var ruleBazylikaSunday = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Weekly,
+            priority: 10,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom", 14 },
+                { "TimeTo",   18 },
+                { "DaysOfWeek", new[] { 0 } }  // 0 = niedziela
+            });
+
+        // Hejnalica — piątek, sobota, niedziela 10:00–17:30 (od 10 kwietnia)
+        var ruleHejnalicaWeekend = new RuleDefinition(
+            new RuleId(Guid.NewGuid()),
+            RuleType.Weekly,
+            priority: 10,
+            Effect.Allow,
+            new Dictionary<string, object>
+            {
+                { "TimeFrom", 10 },
+                { "TimeTo",   17 },
+                { "DaysOfWeek", new[] { 5, 6, 0 } }  // piątek, sobota, niedziela
+            });
+
         // Rejestrujemy wszystkie reguły w globalnej liście (odczytuje ją CatalogSearchService)
-        _globalRules.AddRange(new[] { ruleBasen, ruleSilownia, ruleSniadanie, rulePark });
+        _globalRules.AddRange(new[]
+        {
+            ruleBasen, ruleSilownia, ruleSniadanie, rulePark,
+            ruleBazylikaWeekday, ruleBazylikaSunday, ruleHejnalicaWeekend
+        });
 
         // =============================================================
         // HARMONOGRAMY (AvailabilitySchedule)
@@ -247,6 +291,72 @@ public sealed class AttractionSeeder : IHostedService
                 scenBB,        // a+b   07–11
             });
 
+
+        // =============================================================
+        // 4. BAZYLIKA MARIACKA
+        //    Scenariusz A: Zwiedzanie Bazyliki
+        //      - Pon-Sob 11:30-18:00 (kasa zamykana 15 min przed koncem)
+        //      - Niedziela i swieta 14:00-18:00
+        //    Scenariusz B: Zwiedzanie Hejnalicy (wieza)
+        //      - Weekendy (Pt-Nd) 10:10-17:30, co 30 min, max 15 osob
+        //      - Czynna od 10 kwietnia
+        // =============================================================
+        var tagKosciol  = new Tag(new TagId(Guid.NewGuid()), "KOSCIOL",  "Koscioly i bazyliki", "Obiekty sakralne");
+        var tagSztuka   = new Tag(new TagId(Guid.NewGuid()), "SZTUKA",   "Sztuka i rzezba",     "Dziela sztuki i wystawy");
+        var tagWidokowy = new Tag(new TagId(Guid.NewGuid()), "WIDOKOWY", "Punkt widokowy",      "Wieze i tarasy widokowe");
+        var tagHistoria = new Tag(new TagId(Guid.NewGuid()), "HISTORIA", "Historia",            "Zabytki i miejsca historyczne");
+        var tagKrakow   = new Tag(new TagId(Guid.NewGuid()), "KRAKOW",   "Krakow",              "Atrakcje w Krakowie");
+
+        // Harmonogram bazyliki: Pon-Sob 11:30-18:00 oraz Niedziela 14:00-18:00
+        var scheduleBazylikaBudynek = new AvailabilitySchedule(100, new List<RuleId>
+        {
+            ruleBazylikaWeekday.Id,
+            ruleBazylikaSunday.Id
+        });
+
+        // Harmonogram hejnalicy: Pt-Nd 10:00-17:30 (od 10 kwietnia)
+        var scheduleHejnalica = new AvailabilitySchedule(100, new List<RuleId>
+        {
+            ruleHejnalicaWeekend.Id
+        });
+
+        // Scenariusz A - Zwiedzanie Bazyliki (prezbiterium i nawa glowna z kaplicami)
+        // Bilety: normalny 20 zl, ulgowy 10 zl (uczniowie 7-18 lat, studenci 19-26 lat, seniorzy 65+, KDR)
+        // Wejscie od strony poludniowej; wejscie glowne od Rynku tylko do modlitwy/adoracji
+        // Punkt obslugi: Plac Mariacki 7 (zamykany 15 min przed koncem zwiedzania)
+        var scenZwiedzanieBazyliki = new Scenario(
+            new ScenarioId(Guid.NewGuid()),
+            "Zwiedzanie Bazyliki",
+            TimeSpan.FromMinutes(60),
+            new List<Tag> { tagKosciol, tagSztuka, tagHistoria, tagKrakow },
+            scheduleBazylikaBudynek);
+
+        // Scenariusz B - Zwiedzanie Hejnalicy (wieza polnocna, 239 stopni, widoki na Rynek)
+        // Wejscia co 30 min od 10:10 do 17:30; max 15 osob na wejscie (2 wejscia/godz.)
+        // Dzieci ponizej 7 lat - wstep wzbroniony (wzgledy bezpieczenstwa)
+        // Bilety: normalny 20 zl, ulgowy 15 zl; zakup wylacznie w dniu wizyty w punkcie obslugi
+        // Wejscie na wierze od ul. Florianskiej; liczba biletow ograniczona
+        // W razie zlych warunkow atmosferycznych wieza moze byc nieczynna
+        var scenHejnalica = new Scenario(
+            new ScenarioId(Guid.NewGuid()),
+            "Zwiedzanie Hejnalicy",
+            TimeSpan.FromMinutes(30),
+            new List<Tag> { tagWidokowy, tagKosciol, tagKrakow },
+            scheduleHejnalica);
+
+        var bazylikaMariacka = new SingleAttraction(
+            new AttractionId(Guid.NewGuid()),
+            "Bazylika Mariacka",
+            AttractionState.Catalog,
+            new List<Tag> { tagKosciol, tagSztuka, tagWidokowy, tagHistoria, tagKrakow },
+            new Location(50.0616, 19.9394),     // Plac Mariacki 5 / Rynek Glowny, Krakow
+            zawszeOtwarty,
+            new List<Scenario>
+            {
+                scenZwiedzanieBazyliki,          // Pon-Sob 11:30-18:00 / Nd 14:00-18:00
+                scenHejnalica,                   // Pt-Nd 10:10-17:30 (od 10 kwietnia, weekendy)
+            });
+
         // =============================================================
         // GRUPY ATRAKCJI (pakiety sprzedażowe)
         // Grupy nie dodają własnych reguł godzinowych —
@@ -296,6 +406,7 @@ public sealed class AttractionSeeder : IHostedService
         await _repository.SaveAsync(kompleksBasenowy, cancellationToken);
         await _repository.SaveAsync(fitpark, cancellationToken);
         await _repository.SaveAsync(hotel, cancellationToken);
+        await _repository.SaveAsync(bazylikaMariacka, cancellationToken);
 
         await _repository.SaveAsync(dzienAktywny, cancellationToken);
         await _repository.SaveAsync(dzienWellness, cancellationToken);
